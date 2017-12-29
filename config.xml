@@ -25,10 +25,7 @@
     <preference name="android-minSdkVersion" value="7" />
     <preference name="android-installLocation" value="auto" />
    
-    <gap:plugin name="org.apache.cordova.geolocation" />
-    <gap:plugin name="org.apache.cordova.globalization" />
-    <gap:plugin name="org.apache.cordova.inappbrowser" />
- 
+     
 	<gap:plugin name="com.phonegap.plugins.pushplugin" version="2.4.0" />
     
 	<icon src="icon.png" />
