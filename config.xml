@@ -16,5 +16,8 @@
   <author href="https://build.phonegap.com" email="support@phonegap.com">
       Hardeep Shoker
   </author>
+   <icon src="Logo.png" />
+
+    <access origin="*"/>
 
 </widget>
