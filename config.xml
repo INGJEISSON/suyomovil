@@ -18,6 +18,7 @@
   </author>
    <icon src="Logo.png" />
 
-    <access origin="*"/>
+    <gap:plugin name="com.phonegap.plugins.pushplugin"/> 
+    <access origin="*" />
 
 </widget>
