@@ -18,7 +18,7 @@
   </author>
    <icon src="Logo.png" />
 
-    <gap:plugin name="com.phonegap.plugins.pushplugin"/> 
+      <plugin name="phonegap-plugin-push" spec="2.0.0" />
     <access origin="*" />
 
 </widget>
