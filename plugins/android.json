@@ -12,6 +12,9 @@
     },
     "cordova-plugin-local-notification": {
       "PACKAGE_NAME": "com.example.suyosecurity"
+    },
+    "phonegap-plugin-local-notification": {
+      "PACKAGE_NAME": "com.example.suyosecurity"
     }
   },
   "dependent_plugins": {
