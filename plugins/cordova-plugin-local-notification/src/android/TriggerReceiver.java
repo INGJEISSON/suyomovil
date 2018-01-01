@@ -29,10 +29,12 @@ import de.appplant.cordova.plugin.notification.Builder;
 import de.appplant.cordova.plugin.notification.Manager;
 import de.appplant.cordova.plugin.notification.Notification;
 import de.appplant.cordova.plugin.notification.Options;
+import de.appplant.cordova.plugin.notification.Request;
 import de.appplant.cordova.plugin.notification.receiver.AbstractTriggerReceiver;
 
 import static android.content.Context.POWER_SERVICE;
-import static android.os.PowerManager.RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY;
+import static android.os.Build.VERSION.SDK_INT;
+import static android.os.Build.VERSION_CODES.LOLLIPOP;
 
 /**
  * The alarm receiver is triggered when a scheduled alarm is fired. This class
@@ -54,10 +56,11 @@ public class TriggerReceiver extends AbstractTriggerReceiver {
         boolean isUpdate = bundle.getBoolean(Notification.EXTRA_UPDATE, false);
         Context context  = notification.getContext();
         Options options  = notification.getOptions();
+        Manager manager  = Manager.getInstance(context);
         int badge        = options.getBadgeNumber();
 
         if (badge > 0) {
-            Manager.getInstance(context).setBadge(badge);
+            manager.setBadge(badge);
         }
 
         if (options.shallWakeUp()) {
@@ -65,6 +68,10 @@ public class TriggerReceiver extends AbstractTriggerReceiver {
         }
 
         notification.show();
+
+        if (options.isInfiniteTrigger()) {
+            manager.schedule(new Request(options), this.getClass());
+        }
 
         if (!isUpdate) {
             LocalNotification.fireEvent("trigger", notification);
@@ -86,11 +93,16 @@ public class TriggerReceiver extends AbstractTriggerReceiver {
                     | PowerManager.ACQUIRE_CAUSES_WAKEUP;
 
         PowerManager.WakeLock wakeLock = pm.newWakeLock(
-                level,"LocalNotification");
+                level, "LocalNotification");
 
         wakeLock.setReferenceCounted(false);
         wakeLock.acquire(1000);
-        wakeLock.release(RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY);
+
+        if (SDK_INT >= LOLLIPOP) {
+            wakeLock.release(PowerManager.RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY);
+        } else {
+            wakeLock.release();
+        }
     }
 
     /**

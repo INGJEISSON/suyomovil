@@ -46,6 +46,8 @@ import java.util.Set;
 import static android.app.AlarmManager.RTC;
 import static android.app.AlarmManager.RTC_WAKEUP;
 import static android.app.PendingIntent.FLAG_CANCEL_CURRENT;
+import static android.os.Build.VERSION.SDK_INT;
+import static android.os.Build.VERSION_CODES.M;
 import static android.support.v4.app.NotificationManagerCompat.IMPORTANCE_MAX;
 import static android.support.v4.app.NotificationManagerCompat.IMPORTANCE_MIN;
 
@@ -137,9 +139,10 @@ public final class Notification {
     /**
      * Notification type can be one of triggered or scheduled.
      */
-    public Type getType () {
-        StatusBarNotification[] toasts = getNotMgr().getActiveNotifications();
-        int id = getId();
+    public Type getType() {
+        Manager mgr                    = Manager.getInstance(context);
+        StatusBarNotification[] toasts = mgr.getActiveNotifications();
+        int id                         = getId();
 
         for (StatusBarNotification toast : toasts) {
             if (toast.getId() == id) {
@@ -161,6 +164,8 @@ public final class Notification {
         Set<String> ids                  = new ArraySet<String>();
         AlarmManager mgr                 = getAlarmMgr();
 
+        cancelScheduledAlarms();
+
         do {
             Date date = request.getTriggerDate();
 
@@ -177,13 +182,17 @@ public final class Notification {
         }
         while (request.moveNext());
 
-        if (intents.isEmpty())
+        if (intents.isEmpty()) {
+            unpersist();
             return;
+        }
 
         persist(ids);
 
-        Intent last = intents.get(intents.size() - 1).second;
-        last.putExtra(Request.EXTRA_LAST, true);
+        if (!options.isInfiniteTrigger()) {
+            Intent last = intents.get(intents.size() - 1).second;
+            last.putExtra(Request.EXTRA_LAST, true);
+        }
 
         for (Pair<Date, Intent> pair : intents) {
             Date date     = pair.first;
@@ -202,7 +211,11 @@ public final class Notification {
                         mgr.setExact(RTC, time, pi);
                         break;
                     case IMPORTANCE_MAX:
-                        mgr.setExactAndAllowWhileIdle(RTC_WAKEUP, time, pi);
+                        if (SDK_INT >= M) {
+                            mgr.setExactAndAllowWhileIdle(RTC_WAKEUP, time, pi);
+                        } else {
+                            mgr.setExact(RTC, time, pi);
+                        }
                         break;
                     default:
                         mgr.setExact(RTC_WAKEUP, time, pi);
@@ -250,19 +263,25 @@ public final class Notification {
 
     /**
      * Cancel the local notification.
+     */
+    public void cancel() {
+        cancelScheduledAlarms();
+        unpersist();
+        getNotMgr().cancel(options.getId());
+    }
+
+    /**
+     * Cancel the scheduled future local notification.
      *
      * Create an intent that looks similar, to the one that was registered
      * using schedule. Making sure the notification id in the action is the
      * same. Now we can search for such an intent using the 'getService'
      * method and cancel it.
      */
-    public void cancel() {
+    private void cancelScheduledAlarms() {
         SharedPreferences prefs = getPrefs(PREF_KEY_PID);
         String id               = options.getIdentifier();
         Set<String> actions     = prefs.getStringSet(id, null);
-
-        unpersist();
-        getNotMgr().cancel(options.getId());
 
         if (actions == null)
             return;
